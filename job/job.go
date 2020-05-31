@@ -7,22 +7,25 @@ import (
 	"sync"
 	"time"
 )
+var RemoveJob =make(chan int)
 
 type Job struct {
 	sync.Mutex
-	ID              *int64    `json:"id" sql:"id"`
-	Frequency       string    `json:"frequency,omitempty" sql:"frequency"`
-	StartDate       time.Time `json:"start_date" sql:"start_date"`
-	EndDate         time.Time `json:"end_date" sql:"end_date"`
-	CronEntryID     int     `json:"-" sql:"cron_entry_id"`
+	ID          *int64    `json:"id" sql:"id"`
+	Frequency   string    `json:"frequency,omitempty" sql:"frequency"`
+	StartDate   time.Time `json:"start_date" sql:"start_date"`
+	EndDate     time.Time `json:"end_date" sql:"end_date"`
+	CronEntryID int       `json:"-" sql:"cron_entry_id"`
 }
 
 func (j Job) Run() {
 	if time.Now().UnixNano() > j.StartDate.UnixNano() && time.Now().UnixNano() < j.EndDate.UnixNano() {
 		// run script
-		log.Println("Hi from job: ",*j.ID)
+		log.Println("Hi from job: ", *j.ID,)
 	} else if time.Now().UnixNano() > j.EndDate.UnixNano() {
-		//remove job from cron automatically
+		//inform entry id of job to remove job from cron when it is expired
+		RemoveJob<-j.CronEntryID
+		log.Printf("job %v is expired ", *j.ID,)
 	}
 }
 
@@ -33,7 +36,7 @@ func (j *Job) FormatJobData() (err error) {
 		return
 	}
 	j.EndDate.In(time.Now().Location())
-	if j.Frequency==""{
+	if j.Frequency == "" {
 		log.Println("invalid frequency: ", j.Frequency)
 		err = errors.New("invalid frequency")
 		return
@@ -46,10 +49,12 @@ func (j *Job) List(db *pg.DB) ([]Job, error) {
 	err := db.Model(&list).Select()
 	return list, err
 }
+
 func (j *Job) FetchJob(db *pg.DB) error {
 	err := db.Model(j).WherePK().Select()
 	return err
 }
+
 func (j *Job) Store(db *pg.DB) error {
 	j.ID = nil
 	err := db.Insert(j)
@@ -58,11 +63,11 @@ func (j *Job) Store(db *pg.DB) error {
 
 func (j *Job) Delete(db *pg.DB) error {
 	_, err := db.Model(j).WherePK().Delete()
-	return  err
+	return err
 }
 
 func (j *Job) Update(db *pg.DB) error {
 	_, err := db.Model(j).Set("start_date =?start_date").Set("end_date =?end_date").Set("frequency =?frequency").
 		WherePK().Update()
-	return  err
+	return err
 }

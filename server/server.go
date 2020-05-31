@@ -35,11 +35,20 @@ func NewServer(User, Password string) (*HttpServer, error) {
 
 func (s *HttpServer) RunServer() {
 	s.recover()
+	go s.jobRemover()
 	s.loadRoutes()
 	s.cron.Start()
 	http.ListenAndServe(":8080", s.router)
-
 }
+
+// this function removes the job that is expired
+func (s *HttpServer) jobRemover() {
+	for id:=range job.RemoveJob{
+		s.cron.Remove(cron.EntryID(id))
+		log.Printf("entry %v is expired and removed \n",id)
+	}
+}
+
 
 func (s *HttpServer) recover() {
 	_job := job.Job{}

@@ -2,7 +2,6 @@ package job
 
 import (
 	"errors"
-	"fmt"
 	"github.com/go-pg/pg"
 	"log"
 	"sync"
@@ -13,40 +12,27 @@ type Job struct {
 	sync.Mutex
 	ID              *int64    `json:"id" sql:"id"`
 	Frequency       string    `json:"frequency,omitempty" sql:"frequency"`
-	StartDateString string    `json:"start_date,omitempty" sql:"-"`
-	EndDateString   string    `json:"end_date,omitempty" sql:"-"`
-	StartDate       time.Time `json:"start_date_time" sql:"start_date"`
-	EndDate         time.Time `json:"end_date_time" sql:"end_date"`
+	StartDate       time.Time `json:"start_date" sql:"start_date"`
+	EndDate         time.Time `json:"end_date" sql:"end_date"`
 	CronEntryID     int     `json:"-" sql:"cron_entry_id"`
 }
 
 func (j Job) Run() {
-	if time.Now().UnixNano() > j.StartDate.UnixNano() {
+	if time.Now().UnixNano() > j.StartDate.UnixNano() && time.Now().UnixNano() < j.EndDate.UnixNano() {
 		// run script
-		log.Println("Hi from job: ",j.ID)
+		log.Println("Hi from job: ",*j.ID)
 	} else if time.Now().UnixNano() > j.EndDate.UnixNano() {
-		fmt.Println("stoping")
+		//remove job from cron automatically
 	}
 }
 
 func (j *Job) FormatJobData() (err error) {
-	j.StartDate, err = time.Parse("02-01-2006", j.StartDateString)
-	if err != nil {
-		log.Println(err)
-		err = errors.New("invalid start date, date format: dd-mm-yyyy")
-		return
-	}
-	j.EndDate, err = time.Parse("02-01-2006", j.EndDateString)
-	if err != nil {
-		log.Println(err)
-		err = errors.New("invalid end date, date format: dd-mm-yyyy")
-		return
-	}
 	if j.EndDate.Before(time.Now()) {
 		log.Println("End date: ", j.EndDate)
 		err = errors.New("invalid end_date")
 		return
 	}
+	j.EndDate.In(time.Now().Location())
 	if j.Frequency==""{
 		log.Println("invalid frequency: ", j.Frequency)
 		err = errors.New("invalid frequency")

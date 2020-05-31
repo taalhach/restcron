@@ -16,6 +16,7 @@ type HttpServer struct {
 	cron   *cron.Cron
 }
 
+//gives instance of server
 func NewServer(User, Password string) (*HttpServer, error) {
 	db := pg.Connect(&pg.Options{
 		Password: Password,
@@ -33,7 +34,13 @@ func NewServer(User, Password string) (*HttpServer, error) {
 	}, nil
 }
 
+// starts jobs remover,loads router and starts server
 func (s *HttpServer) RunServer() {
+	table:="create table if not exists jobs (id serial primary key, start_date timestamptz, end_date timestamptz,frequency varchar(255),cron_entry_id integer);"
+	_, err := s.db.Exec(table, nil)
+	if err != nil {
+		panic(err)
+	}
 	s.recover()
 	go s.jobRemover()
 	s.loadRoutes()
@@ -48,8 +55,7 @@ func (s *HttpServer) jobRemover() {
 		log.Printf("entry %v is expired and removed \n",id)
 	}
 }
-
-
+// recovers jobs when server starts by getting jobs from database and removes if expired
 func (s *HttpServer) recover() {
 	_job := job.Job{}
 	_jobs, err := _job.List(s.db)
@@ -77,6 +83,7 @@ func (s *HttpServer) recover() {
 	}
 }
 
+// loads router
 func (s *HttpServer) loadRoutes() {
 	s.router.GET("/", s.getAllJobs())
 	s.router.GET("/job/:id", s.getJob())

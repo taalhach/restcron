@@ -1,0 +1,155 @@
+{
+	"info": {
+		"_postman_id": "f7138732-7ed4-4f73-8d6a-48946a3ce23f",
+		"name": "cron-rest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Job List",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Shopify-Access-Token",
+						"type": "text",
+						"value": "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"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Job",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Shopify-Access-Token",
+						"type": "text",
+						"value": "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"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/job/2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"job",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Job",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Shopify-Access-Token",
+						"type": "text",
+						"value": "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"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"id\":2,\n\t\"start_date\":\"2019-02-25T00:00:00Z\",\n\t\"end_date\":\"2020-06-01T02:50:20.368423812+05:00\",\n\t\"frequency\":\"@every 5s\"\n\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/job",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"job"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Job",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "X-Shopify-Access-Token",
+						"type": "text",
+						"value": "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"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 46,\n    \"frequency\": \"@every 1s\",\n    \"start_date\": \"2019-02-25T00:00:00Z\",\n    \"end_date\": \"2020-06-01T03:08:32.368423812+05:00\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/job",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"job"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Job ",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Shopify-Access-Token",
+						"type": "text",
+						"value": "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"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/job/45",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"job",
+						"45"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

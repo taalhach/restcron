@@ -46,6 +46,7 @@ func (s *HttpServer) RunServer() {
 	go s.jobRemover()
 	s.loadRoutes()
 	s.cron.Start()
+	log.Println("Server started")
 	http.ListenAndServe(":8080", s.router)
 }
 
@@ -58,6 +59,7 @@ func (s *HttpServer) jobRemover() {
 }
 // recovers jobs when server starts by getting jobs from database and removes if expired
 func (s *HttpServer) recover() {
+	log.Println("recovering from database if any job exists and not expired")
 	_job := job.Job{}
 	_jobs, err := _job.List(s.db)
 	if err != nil {

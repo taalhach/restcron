@@ -17,10 +17,11 @@ type HttpServer struct {
 }
 
 //gives instance of server
-func NewServer(User, Password string) (*HttpServer, error) {
+func NewServer(addr,user, password string) (*HttpServer, error) {
 	db := pg.Connect(&pg.Options{
-		Password: Password,
-		User:     User,
+		Addr: addr,
+		Password: password,
+		User:     user,
 	})
 	_, err := db.Exec("SELECT 1")
 	if err != nil {
@@ -85,9 +86,18 @@ func (s *HttpServer) recover() {
 
 // loads router
 func (s *HttpServer) loadRoutes() {
-	s.router.GET("/", s.getAllJobs())
-	s.router.GET("/job/:id", s.getJob())
-	s.router.POST("/job", s.crateJob())
-	s.router.PATCH("/job", s.updateJob())
-	s.router.DELETE("/job/:id", s.removeJob())
+	s.router.GET("/", middleware(s.getAllJobs()))
+	s.router.GET("/job/:id", middleware(s.getJob()))
+	s.router.POST("/job", middleware(s.crateJob()))
+	s.router.PATCH("/job", middleware(s.updateJob()))
+	s.router.DELETE("/job/:id", middleware(s.removeJob()))
 }
+
+func middleware(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		log.Println(r.URL.String(), "	", r.Method, "		")
+		next(w, r, p)
+	}
+}
+
+

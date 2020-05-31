@@ -33,6 +33,35 @@ func (s *HttpServer) getAllJobs() func(w http.ResponseWriter,r *http.Request,_ h
 		},http.StatusOK,w)
 	}
 }
+func (s *HttpServer) getJob() func(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		n:=ps.ByName("id")
+		id,err:=strconv.ParseInt(n,10,64)
+		if err!=nil{
+			log.Println(err)
+			writeResponse(_error{
+				Errors:[]string{"invalid job id"},
+			},http.StatusBadRequest,w)
+			return
+		}
+		_job:=&job.Job{ID:&id}
+		err=_job.FetchJob(s.db)
+		if err!=nil{
+			log.Println(err)
+			_code:=http.StatusInternalServerError
+			_resp:=_error{
+				Errors:[]string{"internal server error"},
+			}
+			if strings.Contains(err.Error(),"no rows"){
+				_resp.Errors=[]string{"job not found"}
+				_code=http.StatusNotFound
+			}
+			writeResponse(_resp,_code,w)
+			return
+		}
+		writeResponse(_job,http.StatusOK,w)
+	}
+}
 func (s *HttpServer) crateJob() func(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		reqBody, _ := ioutil.ReadAll(r.Body)

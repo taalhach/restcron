@@ -40,7 +40,7 @@ func (s *HttpServer)RunServer()  {
 
 func (s *HttpServer)loadRoutes()  {
 	s.router.GET("/",s.getAllJobs())
-	s.router.GET("/job",s.getAllJobs())
+	s.router.GET("/job/:id",s.getJob())
 	s.router.POST("/job",s.crateJob())
 	s.router.PATCH("/job",s.updateJob())
 	s.router.DELETE("/job/:id",s.removeJob())

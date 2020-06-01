@@ -53,7 +53,8 @@ func (s *HttpServer) getJob() func(w http.ResponseWriter,r *http.Request,_ httpr
 				Errors:[]string{"internal server error"},
 			}
 			if strings.Contains(err.Error(),"no rows"){
-				_resp.Errors=[]string{"job not found"}
+				log.Printf("Job: %v is not found",*_job.ID)
+				_resp.Errors=[]string{"job not found\n"}
 				_code=http.StatusNotFound
 			}
 			writeResponse(_resp,_code,w)
@@ -102,6 +103,8 @@ func (s *HttpServer) crateJob() func(w http.ResponseWriter,r *http.Request,_ htt
 			return
 		}
 		writeResponse(_job,http.StatusOK,w)
+		log.Printf("Job is created successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
+			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate)
 	}
 }
 func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
@@ -124,6 +127,7 @@ func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ ht
 				Errors:[]string{"internal server error"},
 			}
 			if strings.Contains(err.Error(),"no rows"){
+				log.Printf("Job: %v is not found\n",*_job.ID)
 				_resp.Errors=[]string{"job not found"}
 				_code=http.StatusNotFound
 			}
@@ -141,6 +145,9 @@ func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ ht
 			return
 		}
 		writeResponse(_job,http.StatusOK,w)
+		log.Printf("Job is removed successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
+			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate)
+
 	}
 }
 func (s *HttpServer) updateJob() func(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
@@ -173,6 +180,7 @@ func (s *HttpServer) updateJob() func(w http.ResponseWriter,r *http.Request,_ ht
 				Errors:[]string{"internal server error"},
 			}
 			if strings.Contains(err.Error(),"no rows"){
+				log.Printf("Job: %v is not found\n",*_job.ID)
 				_resp.Errors=[]string{"job not found"}
 				_code=http.StatusNotFound
 			}
@@ -202,6 +210,9 @@ func (s *HttpServer) updateJob() func(w http.ResponseWriter,r *http.Request,_ ht
 			return
 		}
 		writeResponse(_job,http.StatusOK,w)
+		log.Printf("Job is updated successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
+			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate)
+
 	}
 }
 

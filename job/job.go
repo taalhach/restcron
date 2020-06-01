@@ -67,7 +67,11 @@ func (j *Job) Delete(db *pg.DB) error {
 }
 
 func (j *Job) Update(db *pg.DB) error {
-	_, err := db.Model(j).Set("start_date =?start_date").Set("end_date =?end_date").Set("frequency =?frequency").
+	_, err := db.Model(j).
+		Set("start_date =?start_date").
+		Set("end_date =?end_date").
+		Set("frequency =?frequency").
+		Set("cron_entry_id =?cron_entry_id").
 		WherePK().Update()
 	return err
 }

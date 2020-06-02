@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+const (
+	jobTableSchema=`create table  if not exists jobs (id serial primary key,
+					start_date timestamptz, end_date timestamptz,
+					frequency varchar(255),cron_entry_id integer,
+					is_active bool default false);`
+)
+
 type HttpServer struct {
 	db     *pg.DB
 	router *httprouter.Router
@@ -36,12 +43,8 @@ func NewServer(addr,user, password string) (*HttpServer, error) {
 }
 
 // starts jobs remover,loads router and starts server
-func (s *HttpServer) RunServer() {
-	table:=`create table  if not exists jobs (id serial primary key,
-					start_date timestamptz, end_date timestamptz,
-					frequency varchar(255),cron_entry_id integer,
-					is_active bool default false);`
-	_, err := s.db.Exec(table, nil)
+func (s *HttpServer) RunServer(serverPort string) {
+	_, err := s.db.Exec(jobTableSchema, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +53,7 @@ func (s *HttpServer) RunServer() {
 	s.loadRoutes()
 	s.cron.Start()
 	log.Println("Server started")
-	http.ListenAndServe(":8080", s.router)
+	http.ListenAndServe(":"+serverPort, s.router)
 }
 
 // this function removes the job that is expired

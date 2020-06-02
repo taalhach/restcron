@@ -1,0 +1,10 @@
+{
+  "database": {
+    "url":"localhost:5432",
+    "user_name":"postgres",
+    "password":"postgres"
+  },
+  "server":{
+    "port":"8080"
+  }
+}

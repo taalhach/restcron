@@ -7,7 +7,8 @@ import (
 	"sync"
 	"time"
 )
-var RemoveJob =make(chan int)
+
+var RemoveJob = make(chan int)
 
 type Job struct {
 	sync.Mutex
@@ -16,16 +17,17 @@ type Job struct {
 	StartDate   time.Time `json:"start_date" sql:"start_date"`
 	EndDate     time.Time `json:"end_date" sql:"end_date"`
 	CronEntryID int       `json:"-" sql:"cron_entry_id"`
+	IsActive    bool      `json:"-" sql:"is_active"`
 }
 
 func (j Job) Run() {
 	if time.Now().UnixNano() > j.StartDate.UnixNano() && time.Now().UnixNano() < j.EndDate.UnixNano() {
 		// run script
-		log.Println("Hi from job: ", *j.ID,)
+		log.Println("Hi from job: ", *j.ID)
 	} else if time.Now().UnixNano() > j.EndDate.UnixNano() {
 		//inform entry id of job to remove job from cron when it is expired
-		RemoveJob<-j.CronEntryID
-		log.Printf("job %v is expired ", *j.ID,)
+		RemoveJob <- j.CronEntryID
+		log.Printf("job %v is expired ", *j.ID)
 	}
 }
 
@@ -62,7 +64,10 @@ func (j *Job) Store(db *pg.DB) error {
 }
 
 func (j *Job) Delete(db *pg.DB) error {
-	_, err := db.Model(j).WherePK().Delete()
+	_, err := db.Model(j).
+		Set("is_active =false").
+		WherePK().
+		Update()
 	return err
 }
 
@@ -72,6 +77,7 @@ func (j *Job) Update(db *pg.DB) error {
 		Set("end_date =?end_date").
 		Set("frequency =?frequency").
 		Set("cron_entry_id =?cron_entry_id").
-		WherePK().Update()
+		WherePK().
+		Update()
 	return err
 }

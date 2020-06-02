@@ -37,7 +37,10 @@ func NewServer(addr,user, password string) (*HttpServer, error) {
 
 // starts jobs remover,loads router and starts server
 func (s *HttpServer) RunServer() {
-	table:="create table if not exists jobs (id serial primary key, start_date timestamptz, end_date timestamptz,frequency varchar(255),cron_entry_id integer);"
+	table:=`create table  if not exists jobs (id serial primary key,
+					start_date timestamptz, end_date timestamptz,
+					frequency varchar(255),cron_entry_id integer,
+					is_active bool default false);`
 	_, err := s.db.Exec(table, nil)
 	if err != nil {
 		panic(err)

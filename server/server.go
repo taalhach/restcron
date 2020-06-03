@@ -72,12 +72,7 @@ func (s *HttpServer) recover() {
 		log.Fatal(err)
 	}
 	for _,_job = range _jobs {
-		if _job.EndDate.UnixNano() < time.Now().UnixNano() {
-			err = _job.Delete(s.db)
-			if err != nil {
-				log.Println(err)
-			}
-		} else {
+		 if (_job.EndDate.Unix()<0 || _job.EndDate.UnixNano() > time.Now().UnixNano()) && _job.IsActive {
 			entryID, err := s.cron.AddJob(_job.Frequency, _job)
 			if err != nil {
 				log.Println(err)
@@ -87,8 +82,13 @@ func (s *HttpServer) recover() {
 			if err != nil {
 				log.Println(err)
 			}
+		}else if _job.CronEntryID>0 {
+			_job.CronEntryID=0
+			err = _job.Update(s.db)
+			if err != nil {
+				log.Println(err)
+			}
 		}
-
 	}
 }
 

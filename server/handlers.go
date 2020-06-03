@@ -83,17 +83,19 @@ func (s *HttpServer) crateJob() func(w http.ResponseWriter,r *http.Request,_ htt
 			},http.StatusBadRequest,w)
 			return
 		}
-		//create cron job
-		entryID,err:=s.cron.AddJob(_job.Frequency,_job)
-		if err!=nil{
-			log.Println(err)
-			writeResponse(_error{
-				Errors:[]string{err.Error()},
-			},http.StatusInternalServerError,w)
-			return
+		if _job.IsActive {
+			//create cron job
+			entryID,err:=s.cron.AddJob(_job.Frequency,_job)
+			if err!=nil{
+				log.Println(err)
+				writeResponse(_error{
+					Errors:[]string{err.Error()},
+				},http.StatusInternalServerError,w)
+				return
+			}
+			// add this entry id to job and store in database
+			_job.CronEntryID=int(entryID)
 		}
-		// add this entry id to job and store in database
-		_job.CronEntryID=int(entryID)
 		err=_job.Store(s.db)
 		if err!=nil{
 			log.Println(err)
@@ -104,7 +106,7 @@ func (s *HttpServer) crateJob() func(w http.ResponseWriter,r *http.Request,_ htt
 		}
 		writeResponse(_job,http.StatusOK,w)
 		log.Printf("Job is created successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
-			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate)
+			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate.Unix())
 	}
 }
 func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
@@ -136,7 +138,9 @@ func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ ht
 		}
 		_entry:=cron.EntryID(_job.CronEntryID)
 		s.cron.Remove(_entry)
-		err=_job.Delete(s.db)
+		_job.IsActive=false
+		_job.CronEntryID=0
+		err=_job.Update(s.db)
 		if err!=nil{
 			log.Println(err)
 			writeResponse(_error{
@@ -145,7 +149,7 @@ func (s *HttpServer) removeJob() func(w http.ResponseWriter,r *http.Request,_ ht
 			return
 		}
 		writeResponse(_job,http.StatusOK,w)
-		log.Printf("Job is removed successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
+		log.Printf("Job is paused successfully, JobID: %v, Cron_entry_id: %v, Frequency: %v, Start_date: %v, End_date: %v\n",
 			*_job.ID,_job.CronEntryID,_job.Frequency,_job.StartDate,_job.EndDate)
 
 	}
@@ -188,19 +192,40 @@ func (s *HttpServer) updateJob() func(w http.ResponseWriter,r *http.Request,_ ht
 			return
 		}
 		_entry:=cron.EntryID(_dbJob.CronEntryID)
-		// remove that cron job
-		s.cron.Remove(_entry)
-		// add new cron job
-		_entry,err=s.cron.AddJob(_job.Frequency,_job)
-		if err!=nil{
-			log.Println(err)
-			writeResponse(_error{
-				Errors:[]string{err.Error()},
-			},http.StatusInternalServerError,w)
-			return
+		// both status are set then change to new properties
+		if _job.IsActive && _dbJob.IsActive{
+			// remove that cron job
+			s.cron.Remove(_entry)
+			// add new cron job
+			_entry,err=s.cron.AddJob(_job.Frequency,_job)
+			if err!=nil{
+				log.Println(err)
+				writeResponse(_error{
+					Errors:[]string{err.Error()},
+				},http.StatusInternalServerError,w)
+				return
+			}
+			// add this cron new entry id
+			_job.CronEntryID=int(_entry)
+
+		} else if _dbJob.IsActive && !_job.IsActive{
+			// new status is off then remove the job from cron
+				s.cron.Remove(_entry)
+				_job.CronEntryID=0
+
+		}else if !_dbJob.IsActive && _job.IsActive   {
+			// add new cron job when new status is on
+			_entry,err=s.cron.AddJob(_job.Frequency,_job)
+			if err!=nil{
+				log.Println(err)
+				writeResponse(_error{
+					Errors:[]string{err.Error()},
+				},http.StatusInternalServerError,w)
+				return
+			}
+			// add this cron new entry id
+			_job.CronEntryID=int(_entry)
 		}
-		// add this cron new entry id
-		_job.CronEntryID=int(_entry)
 		err=_job.Update(s.db)
 		if err!=nil{
 			log.Println(err)

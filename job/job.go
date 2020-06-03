@@ -14,17 +14,17 @@ type Job struct {
 	sync.Mutex
 	ID          *int64    `json:"id" sql:"id"`
 	Frequency   string    `json:"frequency,omitempty" sql:"frequency"`
-	StartDate   time.Time `json:"start_date" sql:"start_date"`
-	EndDate     time.Time `json:"end_date" sql:"end_date"`
+	StartDate   time.Time `json:"start_date,omitempty" sql:"start_date"`
+	EndDate     time.Time `json:"end_date,omitempty" sql:"end_date"`
 	CronEntryID int       `json:"-" sql:"cron_entry_id"`
-	IsActive    bool      `json:"-" sql:"is_active"`
+	IsActive    bool      `json:"is_active" sql:"is_active"`
 }
 
 func (j Job) Run() {
-	if time.Now().UnixNano() > j.StartDate.UnixNano() && time.Now().UnixNano() < j.EndDate.UnixNano() {
-		// run script
+	if time.Now().Unix() > j.StartDate.Unix()&& ((j.EndDate.Unix()>0 && j.EndDate.Unix()>time.Now().Unix())||j.EndDate.Unix()<0){
 		log.Println("Hi from job: ", *j.ID)
-	} else if time.Now().UnixNano() > j.EndDate.UnixNano() {
+
+	} else if j.EndDate.UnixNano()>0 && time.Now().UnixNano() > j.EndDate.UnixNano() {
 		//inform entry id of job to remove job from cron when it is expired
 		RemoveJob <- j.CronEntryID
 		log.Printf("job %v is expired ", *j.ID)
@@ -32,12 +32,6 @@ func (j Job) Run() {
 }
 
 func (j *Job) FormatJobData() (err error) {
-	if j.EndDate.Before(time.Now()) {
-		log.Println("End date: ", j.EndDate)
-		err = errors.New("invalid end_date")
-		return
-	}
-	j.EndDate.In(time.Now().Location())
 	if j.Frequency == "" {
 		log.Println("invalid frequency: ", j.Frequency)
 		err = errors.New("invalid frequency")
@@ -77,6 +71,7 @@ func (j *Job) Update(db *pg.DB) error {
 		Set("end_date =?end_date").
 		Set("frequency =?frequency").
 		Set("cron_entry_id =?cron_entry_id").
+		Set("is_active =?is_active").
 		WherePK().
 		Update()
 	return err
